@@ -39,10 +39,7 @@ describe DB do
       let(:insert_sql) { "INSERT INTO foo (id) VALUES (100)" }
       let(:select_sql) { "SELECT * FROM foo" }
       
-      # SQLite3's results_as_hash returns a hash with both
-      # named and positional arguments, i.e., "the field named 'id'"
-      # and "the first field."
-      let(:select_results) { [{'id' => 100, 0 => 100}] }
+      let(:select_results) { [{'id' => 100}] }
 
       before(:each) do
         DB.database_file = database_file

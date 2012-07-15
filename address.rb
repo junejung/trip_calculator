@@ -22,6 +22,10 @@ class Address
         self.new(row)
       end
     end
+
+    def count
+      DB.get_first_value("SELECT COUNT(*) FROM #{TABLE_NAME}")
+    end
   end
   
   
@@ -48,7 +52,7 @@ class Address
     @changed = false
 
     # Records created via #initialize are new (unsaved) records
-    @new_record = false
+    @new_record = has_attribute?(PRIMARY_KEY)
   end
 
   # This allows us to do things like
@@ -70,8 +74,8 @@ class Address
   end
   
   ATTRIBUTES.each do |attribute|
-    # define_methods takes as its input a symbol and a block
-    # and defines that method dynamically
+    # define_methods takes as its input a symbol or string and a block
+    # and dynamically defines a method with that name and code
     # e.g., these are equivalent:
     # def add(a,b)
     #   a + b
@@ -80,6 +84,8 @@ class Address
     # define_method(:add) do |a,b|
     #   a + b
     # end
+    #
+    # This allows us to define methods at run-time
     define_method(attribute) do
       self[attribute]
     end
@@ -104,7 +110,11 @@ class Address
   def save
     create_or_update
   end
-  
+
+  def ==(other_address)
+    self[PRIMARY_KEY] == other_address[PRIMARY_KEY]
+  end
+
   private
   # Creates a new record or updates an existing record
   # Returns true if the operation succeeded
@@ -119,33 +129,33 @@ class Address
   end
   
   def update
-    self.update_attribute(:updated_at, Time.now.utc)
+    self.update_attribute(:updated_at, Time.now.utc) if has_attribute?(:updated_at)
 
     fields = secondary_attributes
-    values = secondary_attributes.map { |attribute| self[attribute] }
+    values = secondary_attributes.map { |attr| DB.sanitize(self[attr]) }
     
     update_clause = fields.map { |field| "#{field} = ?"}.join(', ')
 
     sql = "UPDATE #{TABLE_NAME} SET #{update_clause} WHERE #{PRIMARY_KEY} = ?"
-
     DB.execute(sql, *values, self[PRIMARY_KEY])
   end
   
   
   def create
-    time = DBTime.now.utc
-    self.update_attribute(:created_at, time)
-    self.update_attribute(:updated_at, time)
+    time = DateTime.now
+    self.update_attribute(:created_at, time) if has_attribute?(:created_at)
+    self.update_attribute(:updated_at, time) if has_attribute?(:updated_at)
 
     fields = secondary_attributes
-    values = secondary_attributes.map { |attribute| self[attribute] }
+    values = secondary_attributes.map { |attr| DB.sanitize(self[attr]) }
 
     sql = "INSERT INTO #{TABLE_NAME} (#{fields.join(', ')}) VALUES (#{Array.new(values.length, '?').join(', ')})"
     DB.execute(sql, *values)
 
-    self.id = DB.last_insert_row_id
+    update_attribute(PRIMARY_KEY, DB.last_insert_row_id)
 
     @new_record = false
-    self.id
+
+    self[PRIMARY_KEY]
   end
 end

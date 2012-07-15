@@ -1,6 +1,3 @@
-require 'json'
-require 'rest_client'
-
 module MapsAPI
   MAPS_URL = 'https://maps.googleapis.com/maps/api/directions/json'
   DEFAULTS = {:sensor => false}

@@ -12,6 +12,17 @@ describe Address do
     DB.execute("DELETE FROM sqlite_sequence WHERE name='#{Address::TABLE_NAME}'")
   end
 
+  describe ".all" do
+    it "returns an empty array when there are no records" do
+      Address.all.should eq []
+    end
+
+    it "returns all addresses" do
+      address.save
+      Address.all.should eq [address]
+    end
+  end
+
   describe ".find" do
     context "with invalid arguments" do
       it "requires a primary key" do
@@ -32,6 +43,21 @@ describe Address do
         address.save
         Address.find(address.id).should be_an_instance_of Address
       end
+    end
+  end
+  
+  describe "#save" do
+    it "inserts a new record" do
+      expect {
+        address.save
+      }.to change(Address, :count).by(1)
+    end
+    
+    it "updates an existing record" do
+      address.save
+      address.content = "Blah blah"
+      address.save
+      Address.find(address.id).content.should eq address.content
     end
   end
 end

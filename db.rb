@@ -1,5 +1,3 @@
-require 'sqlite3'
-
 module DB
   class Error < StandardError;end
 
@@ -13,14 +11,18 @@ module DB
 
   def self.database_file=(database)
     @database = SQLite3::Database.new(database)
-    @database.results_as_hash = true
+
+    # This configures SQLite to return, e.g.,
+    # DateTime objects instead of strings that then need to be parsed
+    @database.type_translation = true
 
     # return results as an array of hashes rather than an array of arrays, e.g.,
     #   [{'id' => 1, 'name' => 'Jesse'}, {'id' => 2, 'name' => 'Bob'}] vs.
     #   [[1, 'Jesse'], [2, 'Bob']]
     #
     # See: http://sqlite-ruby.rubyforge.org/sqlite3/faq.html#538670736
-    #
+    @database.results_as_hash = true
+
     # If you don't see why this is advantageous, then riddle me this:
     #
     # You see this code
@@ -69,6 +71,17 @@ module DB
       @database.send(method, *args)
     else
       raise ConnectionError.new('No valid database connection.')
+    end
+  end
+  
+  # Ideally, an object knows how to "sanitize" itself
+  # However, augmenting core classes is also a hack
+  def self.sanitize(input)
+    case input
+    when Time, DateTime, Date
+      input.strftime('%FT%T%:z')
+    else
+      input
     end
   end
 end
