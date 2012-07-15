@@ -8,29 +8,27 @@ class Address
   PRIMARY_KEY = :id  
   ATTRIBUTES  = [PRIMARY_KEY, :content, :created_at, :updated_at]
 
-  class << self
-    def find(id)
-      if row = DB.get_first_row("SELECT * FROM #{TABLE_NAME} WHERE #{PRIMARY_KEY} = ?", id)
-        self.new(row)
-      else
-        raise DB::RecordNotFound.new("No #{self.name} record with id '#{id}'")
-      end
+  def self.find(id)
+    if row = DB.get_first_row("SELECT * FROM #{TABLE_NAME} WHERE #{PRIMARY_KEY} = ?", id)
+      self.new(row)
+    else
+      raise DB::RecordNotFound.new("No #{self.name} record with id '#{id}'")
     end
+  end
 
-    def all
-      DB.execute("SELECT * FROM #{TABLE_NAME}").map do |row|
-        self.new(row)
-      end
+  def self.all
+    DB.execute("SELECT * FROM #{TABLE_NAME}").map do |row|
+      self.new(row)
     end
+  end
 
-    def count
-      DB.get_first_value("SELECT COUNT(*) FROM #{TABLE_NAME}")
-    end
+  def self.count
+    DB.get_first_value("SELECT COUNT(*) FROM #{TABLE_NAME}")
+  end
 
-    def create(opts = {})
-      self.new(opts).tap do |record|
-        record.save
-      end
+  def self.create(opts = {})
+    self.new(opts).tap do |record|
+      record.save
     end
   end
 
