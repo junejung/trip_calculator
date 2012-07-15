@@ -31,7 +31,6 @@ task :console do
   system("irb -r./init")
 end
 
-
 # This makes rake run the 'db:test:reset'
 # before we run rake spec
 task :spec => 'db:test:reset'
