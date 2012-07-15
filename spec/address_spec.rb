@@ -2,7 +2,8 @@ require './init'
 require 'rspec'
 
 describe Address do
-  let(:address) { Address.new(:content => '249 Oak St. #1 San Francisco, CA') }
+  let(:address)       { Address.new(:content => '249 Oak St. #1 San Francisco, CA') }
+  let(:saved_address) { Address.new(:content => 'foo').tap { |addr| addr.save } }
 
   before(:each) do
     # Delete everything from the address table
@@ -10,6 +11,20 @@ describe Address do
     
     # Reset the auto-incrementing ID
     DB.execute("DELETE FROM sqlite_sequence WHERE name='#{Address::TABLE_NAME}'")
+  end
+
+  describe ".count" do
+    it "returns 0 when there are no records" do
+      Address.count.should be_zero
+    end
+  end
+
+  describe ".create" do
+    it "creates a new record" do
+      expect {
+        Address.create(:content => 'foo')
+      }.to change(Address, :count).by(1)
+    end
   end
 
   describe ".all" do
@@ -47,17 +62,61 @@ describe Address do
   end
   
   describe "#save" do
-    it "inserts a new record" do
-      expect {
-        address.save
-      }.to change(Address, :count).by(1)
+    context "when the record is new" do
+      it "inserts a record" do
+        expect {
+          Address.new(:content => 'foo').save
+        }.to change(Address, :count).by(1)
+      end
+
+      it "requires content" do
+        expect {
+          Address.new.save
+        }.to raise_error
+      end
+
+      it "sets created_at" do
+        expect {
+          address.save
+        }.to change(address, :created_at).from(nil).to(DateTime)
+      end
+
+      it "sets updated_at" do
+        expect {
+          address.save
+        }.to change(address, :created_at).from(nil).to(DateTime)
+      end
+
+      it "it sets new_record? to false" do
+        expect {
+          address.save
+        }.to change(address, :new_record?).from(true).to(false)
+      end
     end
-    
-    it "updates an existing record" do
-      address.save
-      address.content = "Blah blah"
-      address.save
-      Address.find(address.id).content.should eq address.content
+
+    context "when the record already exists" do
+      it "updates an existing record" do
+        address_id = saved_address.id
+
+        address = Address.find(address_id)
+        address.content = 'beep'
+        address.save
+
+        Address.find(address_id).content.should eq 'beep'
+      end
+      
+      it "updates updated_at" do
+        expect {
+          address.save
+        }.to change(address, :updated_at)
+      end
+      
+      it "doesn't change the primary key" do
+        expect {
+          saved_address.content = 'mork'
+          saved_address.save
+        }.to_not change(saved_address, :id)
+      end
     end
   end
 end

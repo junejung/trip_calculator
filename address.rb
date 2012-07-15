@@ -1,6 +1,6 @@
 class Address
   TABLE_NAME  = :addresses
-  
+
   # In a future version we can extract these dynamically from the SQLite database
   # by executing DB.execute("PRAGMA table_info(addresses)")
   #
@@ -26,9 +26,14 @@ class Address
     def count
       DB.get_first_value("SELECT COUNT(*) FROM #{TABLE_NAME}")
     end
+
+    def create(opts = {})
+      self.new(opts).tap do |record|
+        record.save
+      end
+    end
   end
-  
-  
+
   # We're not going to store every part of an address
   # Why not?  Will our client need it in the first version?
   # Will they ever need it?
@@ -52,7 +57,7 @@ class Address
     @changed = false
 
     # Records created via #initialize are new (unsaved) records
-    @new_record = has_attribute?(PRIMARY_KEY)
+    @new_record = @data[PRIMARY_KEY].nil?
   end
 
   # This allows us to do things like
@@ -63,7 +68,7 @@ class Address
   def [](field)
     @data[field.to_sym]
   end
-  
+
   def update_attribute(field, value)
     if has_attribute?(field)
       @changed = true
@@ -72,7 +77,7 @@ class Address
       raise DB::UnknownAttribute.new("Unknown attribute `#{field}` for class #{self.class}")
     end
   end
-  
+
   ATTRIBUTES.each do |attribute|
     # define_methods takes as its input a symbol or string and a block
     # and dynamically defines a method with that name and code
@@ -98,7 +103,7 @@ class Address
   def has_attribute?(field)
     @attributes.include?(field.to_sym)
   end
-  
+
   def changed?
     @changed
   end
@@ -123,11 +128,11 @@ class Address
     result = new_record? ? create : update
     result != false
   end
-  
+
   def secondary_attributes
     @attributes - Array(PRIMARY_KEY)
   end
-  
+
   def update
     self.update_attribute(:updated_at, Time.now.utc) if has_attribute?(:updated_at)
 
@@ -137,10 +142,11 @@ class Address
     update_clause = fields.map { |field| "#{field} = ?"}.join(', ')
 
     sql = "UPDATE #{TABLE_NAME} SET #{update_clause} WHERE #{PRIMARY_KEY} = ?"
-    DB.execute(sql, *values, self[PRIMARY_KEY])
+    DB.execute(sql, *values, self[PRIMARY_KEY]).tap do
+      @changed = false
+    end
   end
-  
-  
+
   def create
     time = DateTime.now
     self.update_attribute(:created_at, time) if has_attribute?(:created_at)
@@ -155,6 +161,7 @@ class Address
     update_attribute(PRIMARY_KEY, DB.last_insert_row_id)
 
     @new_record = false
+    @changed    = false
 
     self[PRIMARY_KEY]
   end
