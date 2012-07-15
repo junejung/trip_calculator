@@ -1,5 +1,5 @@
-require './db'
 require 'rspec'
+require_relative '../lib/db'
 
 describe DB do
   before(:all) do

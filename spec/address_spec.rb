@@ -1,5 +1,5 @@
-require './init'
 require 'rspec'
+require_relative '../init'
 
 describe Address do
   let(:address)       { Address.new(:content => '249 Oak St. #1 San Francisco, CA') }
