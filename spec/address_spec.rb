@@ -89,6 +89,12 @@ describe Address do
         }.to raise_error
       end
 
+      it "sets the primary key" do
+        expect {
+          address.save
+        }.to change(address, :id).from(nil).to(Fixnum)
+      end
+
       it "sets created_at" do
         expect {
           address.save
