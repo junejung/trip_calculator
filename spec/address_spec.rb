@@ -58,6 +58,20 @@ describe Address do
         address.save
         Address.find(address.id).should be_an_instance_of Address
       end
+      
+      it "sets new_record? to false" do
+        Address.find(saved_address.id).new_record?.should be_false
+      end
+    end
+  end
+  
+  describe "#new" do
+    it "sets new_record? to true" do
+      Address.new.new_record?.should be_true
+    end
+
+    it "sets changed? to false" do
+      Address.new.changed?.should be_false
     end
   end
   
@@ -65,7 +79,7 @@ describe Address do
     context "when the record is new" do
       it "inserts a record" do
         expect {
-          Address.new(:content => 'foo').save
+          address.save
         }.to change(Address, :count).by(1)
       end
 
