@@ -3,7 +3,7 @@ require_relative '../init'
 
 describe Address do
   let(:address)       { Address.new(:content => '249 Oak St. #1 San Francisco, CA') }
-  let(:saved_address) { Address.new(:content => 'foo').tap { |addr| addr.save } }
+  let(:saved_address) { Address.new(:content => 'gork gork gork').tap { |addr| addr.save } }
 
   before(:each) do
     # Delete everything from the address table
