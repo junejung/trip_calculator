@@ -7,7 +7,11 @@ DROP TABLE IF EXISTS addresses;
 
 CREATE TABLE addresses (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
+  label VARCHAR(32),
   content VARCHAR NOT NULL,
   created_at DATETIME NOT NULL,
   updated_at DATETIME NOT NULL
 );
+
+-- This guarantees that the label column is unique
+CREATE UNIQUE INDEX label_index ON addresses(label);
