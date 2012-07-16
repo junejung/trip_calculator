@@ -20,7 +20,7 @@ class UI
     print_row ['mode', 'duration', 'distance']
 
     @trips.each do |mode, trip|
-      print_row [mode, trip.duration, trip.distance]
+      print_row [mode, format_seconds(trip.duration), format_meters(trip.distance)]
     end
   end
   
@@ -31,6 +31,15 @@ class UI
 
   def load_address(label_or_content)
     Address.find_by_label(label_or_content) || Address.new(:content => label_or_content)
+  end
+
+  def format_seconds(minutes)
+    "%d min" % (minutes/60)
+  end
+  
+  def format_meters(meters)
+    # Convert to miles, and only include two decimal points
+    "%0.2f mi" % (meters/1609.34)
   end
 end
 
