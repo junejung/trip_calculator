@@ -1,3 +1,4 @@
+require 'logger'
 module DB
   class Error < StandardError;end
 

@@ -107,7 +107,7 @@ describe Address do
         }.to change(address, :created_at).from(nil).to(DateTime)
       end
 
-      it "it sets new_record? to false" do
+      it "sets new_record? to false" do
         expect {
           address.save
         }.to change(address, :new_record?).from(true).to(false)

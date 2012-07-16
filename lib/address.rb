@@ -27,9 +27,9 @@ class Address
   end
 
   def self.create(opts = {})
-    self.new(opts).tap do |record|
-      record.save
-    end
+    record = self.new(opts)
+    record.save
+    record
   end
 
   # We're not going to store every part of an address
@@ -132,6 +132,8 @@ class Address
   end
 
   def update
+    return unless changed?
+
     self.update_attribute(:updated_at, Time.now.utc) if has_attribute?(:updated_at)
 
     fields = secondary_attributes
