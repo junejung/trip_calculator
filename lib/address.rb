@@ -74,51 +74,101 @@ class Address
     @changed = false
 
     # Records are "new" 
-    @new_record = @data[Address.primary_key].nil?
+    @new_record = get_attribute(Address.primary_key).nil?
   end
 
-  # This allows us to do things like
-  # address = Address.new(...)
-  # address[:id]
-  # address[:content]
-  # etc.
-  def [](field)
-    @data[field.to_sym]
+  # Return the value of the
+  def get_attribute(attribute)
+    @data[attribute.to_sym]
   end
 
-  def update_attribute(field, value)
-    if has_attribute?(field)
+  def update_attribute(attribute, value)
+    if has_attribute?(attribute)
       @changed = true
-      @data[field.to_sym] = value
+      @data[attribute.to_sym] = value
     else
-      raise DB::UnknownAttribute.new("Unknown attribute `#{field}` for class #{self.class}")
+      raise DB::UnknownAttribute.new("Unknown attribute `#{attribute}` for class #{self.class}")
     end
+  end
+
+  # We could make these instance variables and use
+  # attr_reader, attr_accessor, etc.
+  #
+  # But then when we go to save a row into the database,
+  # how do we know what variables to pull in to the query?
+  #
+  # We'd have to enumerate them again.
+
+  def id
+    get_attribute(:id)
+  end
+
+  def id=(id)
+    update_attribute(:id, id)
+  end
+
+  def label
+    get_attribute(:label)
+  end
+
+  def label=(label)
+    update_attribute(:label, label)
+  end
+
+  def content
+    get_attribute(:content)
+  end
+
+  def content=(content)
+    update_attribute(:content, content)
+  end
+
+  def created_at
+    get_attribute(:created_at)
+  end
+
+  def created_at=(created_at)
+    update_attribute(:created_at, created_at)
+  end
+
+  def updated_at
+    get_attribute(:updated_at)
+  end
+
+  def updated_at=(updated_at)
+    update_attribute(:updated_at, updated_at)
   end
   
-  Address.attributes.each do |attribute|
-    # define_methods takes as its input a symbol or string and a block
-    # and dynamically defines a method with that name and code
-    # e.g., these are equivalent:
-    # def add(a,b)
-    #   a + b
-    # end
-    #
-    # define_method(:add) do |a,b|
-    #   a + b
-    # end
-    #
-    # This allows us to define methods at run-time
-    define_method(attribute) do
-      self[attribute]
-    end
-
-    define_method("#{attribute}=") do |value|
-      self.update_attribute(attribute, value)
-    end
-  end
-
-  def has_attribute?(field)
-    @attributes.include?(field.to_sym)
+  # The above is incredibly repetitive, right?
+  # Every time you add or remove an attribute, you'd
+  # need to add or remove the getters and setters
+  #
+  # Here's how you'd make it less repetitive.
+  # 
+  # self.attributes.each do |attribute|
+  #     # define_methods takes as its input a symbol or string and a block
+  #     # and dynamically defines a method with that name and code
+  #     # e.g., these are equivalent:
+  #     # def add(a,b)
+  #     #   a + b
+  #     # end
+  #     #
+  #     # define_method(:add) do |a,b|
+  #     #   a + b
+  #     # end
+  #     #
+  #     # This allows us to define methods at run-time
+  #     define_method(attribute) do
+  #       get_attribute(attribute)
+  #     end
+  # 
+  #     define_method("#{attribute}=") do |value|
+  #       self.update_attribute(attribute, value)
+  #     end
+  #   end
+  
+  def has_attribute?(attribute)
+    @attributes.include?(attribute.to_sym)
   end
 
   def changed?
@@ -134,7 +184,7 @@ class Address
   end
 
   def ==(other)
-    other.is_a?(Address) && self[Address.primary_key] == other[Address.primary_key]
+    other.is_a?(Address) && get_attribute(Address.primary_key) == get_attribute(Address.primary_key)
   end
 
   private
@@ -154,26 +204,27 @@ class Address
     # We only need to update if the object has changed
     return unless changed?
 
-    self.update_attribute(:updated_at, Time.now.utc) if has_attribute?(:updated_at)
+    update_attribute(:updated_at, Time.now.utc) if has_attribute?(:updated_at)
 
     fields = secondary_attributes
-    values = secondary_attributes.map { |attr| DB.sanitize(self[attr]) }
+    values = secondary_attributes.map { |attr| DB.sanitize get_attribute(attr) }
     
     update_clause = fields.map { |field| "#{field} = ?"}.join(', ')
 
     sql = "UPDATE #{Address.table_name} SET #{update_clause} WHERE #{Address.primary_key} = ?"
-    DB.execute(sql, *values, self[Address.primary_key]).tap do
-      @changed = false
-    end
+
+    result = DB.execute(sql, *values, get_attribute(Address.primary_key))
+    @changed = false
+    result
   end
 
   def create
     time = DateTime.now
-    self.update_attribute(:created_at, time) if has_attribute?(:created_at)
-    self.update_attribute(:updated_at, time) if has_attribute?(:updated_at)
+    update_attribute(:created_at, time) if has_attribute?(:created_at)
+    update_attribute(:updated_at, time) if has_attribute?(:updated_at)
 
     fields = secondary_attributes
-    values = secondary_attributes.map { |attr| DB.sanitize(self[attr]) }
+    values = secondary_attributes.map { |attr| DB.sanitize get_attribute(attr) }
 
     sql = "INSERT INTO #{Address.table_name} (#{fields.join(', ')}) VALUES (#{Array.new(values.length, '?').join(', ')})"
     DB.execute(sql, *values)
@@ -183,6 +234,6 @@ class Address
     @new_record = false
     @changed    = false
 
-    self[Address.primary_key]
+    get_attribute(Address.primary_key)
   end
 end
