@@ -5,6 +5,10 @@ class Trip
     @mode        = opts.fetch(:mode)        { 'driving' }
   end
 
+  def valid?
+    data['status'] == 'OK'
+  end
+
   def distance
     response[:distance]
   end
@@ -21,12 +25,17 @@ class Trip
   def response
     return @response if @response
 
-    data      = MapsAPI.get(:origin => @origin.content, :destination => @destination.content, :mode => @mode)
-    first_leg = MapsAPI.first_leg(data)
-    
     @response = {
       :distance => first_leg['distance']['value'],
       :duration => first_leg['duration']['value'],
     }
+  end
+
+  def data
+    @data ||= MapsAPI.get(:origin => @origin.content, :destination => @destination.content, :mode => @mode)
+  end
+
+  def first_leg
+    MapsAPI.first_leg(data)
   end
 end

@@ -76,6 +76,17 @@ class Address
     # Records are "new" 
     @new_record = get_attribute(Address.primary_key).nil?
   end
+  
+  def to_s
+    if label
+      "%s (%s)" % [content, label]
+    else
+      content
+    end
+  end
+
+  # Everything after this is related to interacting with the database
+  # For the most part, it could be pulled out into an abstract "model" class
 
   # Return the value of the
   def get_attribute(attribute)

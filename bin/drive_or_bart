@@ -7,25 +7,33 @@ class UI
   def initialize(origin, destination)
     @origin      = load_address(origin)
     @destination = load_address(destination)
-    
+
     params = {:origin => @origin, :destination => @destination}
-    
+
     @trips = {
       :driving => Trip.new(params.merge(:mode => 'driving')),
       :transit => Trip.new(params.merge(:mode => 'transit')),
       :walking => Trip.new(params.merge(:mode => 'walking')),
       :bicycle => Trip.new(params.merge(:mode => 'bicycle')),
-    }    
+    }
   end
   
   def print_table
-    puts "Origin:      %s" % [@origin.content]
-    puts "Destination: %s" % [@destination.content]
-    puts ""
-    print_row ['Mode', 'Duration', 'Distance']
+    if @trips.values.all? { |trip| trip.valid? }
+      puts "Origin:      %s" % [@origin]
+      puts "Destination: %s" % [@destination]
+      puts ""
+      print_row ['Mode', 'Duration', 'Distance']
 
-    @trips.sort_by { |mode, trip| trip.duration }.each do |mode, trip|
-      print_row [mode, format_seconds(trip.duration), format_meters(trip.distance)]
+      @trips.sort_by { |mode, trip| trip.duration }.each do |mode, trip|
+        print_row [mode, format_seconds(trip.duration), format_meters(trip.distance)]
+      end
+    else
+      puts "Oops, looks like you might have a bad address!"
+      puts "Did you use an incorrect or non-existent label?"
+      puts ""
+      puts "Origin:      %s" % [@origin]
+      puts "Destination: %s" % [@destination]
     end
   end
   
@@ -48,12 +56,19 @@ class UI
   end
 end
 
+# Whattahack
 
 case ARGV[0]
 when 'save'
   label = ARGV[1]
   content = ARGV[2]
-  Address.create(:label => label, :content => content)
+
+  if address = Address.find_by_label(label)
+    address.content = content
+    address.save
+  else
+    Address.create(:label => label, :content => content)
+  end
 when 'list'
   puts "label\taddress"
   Address.all.each do |address|
@@ -61,16 +76,18 @@ when 'list'
   end
 else
   if ARGV.length != 2
-    puts "usage:   drive_or_bart <origin> <destination>"
-    puts "         drive_or_bart save <label> <address>"
-    puts "         drive_or_bart list"
-    puts ""
-    puts "examples:"
-    puts "  drive_or_bart '249 Oak St San Francisco, CA' '717 California St San Francisco, CA'"
-    puts "  drive_or_bart save home '249 Oak St San Francisco, CA'"
-    puts "  drive_or_bart save work '717 California St San Francisco, CA'"
-    puts "  drive_or_bart home work"
-    puts ""
+    puts <<-USAGE
+    Usage:   
+      drive_or_bart <origin> <destination>
+      drive_or_bart save <label> <address>
+      drive_or_bart list
+
+    Examples:
+      drive_or_bart '249 Oak St San Francisco, CA' '717 California St San Francisco, CA'
+      drive_or_bart save home '249 Oak St San Francisco, CA'
+      drive_or_bart save work '717 California St San Francisco, CA'
+      drive_or_bart home work
+USAGE
   else
     ui = UI.new(ARGV[0], ARGV[1])
     ui.print_table
