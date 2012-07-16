@@ -7,10 +7,10 @@ describe Address do
 
   before(:each) do
     # Delete everything from the address table
-    DB.execute("DELETE FROM #{Address::table_name}")
+    DB.execute("DELETE FROM #{Address.table_name}")
     
     # Reset the auto-incrementing ID
-    DB.execute("DELETE FROM sqlite_sequence WHERE name='#{Address::table_name}'")
+    DB.execute("DELETE FROM sqlite_sequence WHERE name='#{Address.table_name}'")
   end
 
   describe ".count" do
