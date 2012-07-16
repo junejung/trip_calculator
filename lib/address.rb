@@ -29,7 +29,9 @@ class Address
   end
 
   def self.find_by_label(label)
-    DB.get_first_row("SELECT * FROM #{self.table_name} WHERE label = ?", label)
+    if data = DB.get_first_row("SELECT * FROM #{self.table_name} WHERE label = ?", label)
+      self.new(data)
+    end
   end
 
   # Returns an array of every +Address+ in the database
