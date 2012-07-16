@@ -1,5 +1,43 @@
 #!/usr/bin/env ruby
 require_relative '../init'
 
-puts "hey"
+class UI
+  attr_reader :origin, :destination, :trips
 
+  def initialize(origin, destination)
+    @origin      = load_address(origin)
+    @destination = load_address(destination)
+    
+    params = {:origin => @origin, :destination => @destination}
+    
+    @trips = {
+      :driving => Trip.new(params.merge(:mode => 'driving')),
+      :transit => Trip.new(params.merge(:mode => 'transit')),
+    }    
+  end
+  
+  def print_table
+    print_row ['mode', 'duration', 'distance']
+
+    @trips.each do |mode, trip|
+      print_row [mode, trip.duration, trip.distance]
+    end
+  end
+  
+  private
+  def print_row(row)
+    puts "% -10s\t% -10s\%s" % row
+  end
+
+  def load_address(label_or_content)
+    Address.find_by_label(label_or_content) || Address.new(:content => label_or_content)
+  end
+end
+
+if ARGV.length != 2
+  puts "usage:   drive_or_bart <origin> <destination>"
+  puts "example: drive_or_bart '249 Oak St San Francisco, CA' '717 California St San Francisco, CA'"
+else
+  ui = UI.new(ARGV[0], ARGV[1])
+  ui.print_table
+end

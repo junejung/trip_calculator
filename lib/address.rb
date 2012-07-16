@@ -3,20 +3,25 @@ class Address
   # by executing DB.execute("PRAGMA table_info(addresses)")
   #
   # See: http://www.sqlite.org/pragma.html
+  
+  # The table associated with this class
   def self.table_name
     :addresses
   end
 
+  # The primary key for the addresses table
   def self.primary_key
     :id
   end
 
+  # A list of attributes, corresponding to fields in the database
   def self.attributes
     [self.primary_key, :label, :content, :created_at, :updated_at]
   end
 
+  # Returns the +Address+ with +id+ or raises a +DB::RecordNotFound+ exception
   def self.find(id)
-    if row = DB.get_first_row("SELECT * FROM #{Address.table_name} WHERE #{Address.primary_key} = ?", id)
+    if row = DB.get_first_row("SELECT * FROM #{self.table_name} WHERE #{self.primary_key} = ?", id)
       self.new(row)
     else
       raise DB::RecordNotFound.new("No #{self.name} record with id '#{id}'")
@@ -24,17 +29,18 @@ class Address
   end
 
   def self.find_by_label(label)
-    DB.get_first_row("SELECT * FROM #{Address.table_name} WHERE label = ?", label)
+    DB.get_first_row("SELECT * FROM #{self.table_name} WHERE label = ?", label)
   end
 
+  # Returns an array of every +Address+ in the database
   def self.all
-    DB.execute("SELECT * FROM #{Address.table_name}").map do |row|
+    DB.execute("SELECT * FROM #{self.table_name}").map do |row|
       self.new(row)
     end
   end
 
   def self.count
-    DB.get_first_value("SELECT COUNT(*) FROM #{Address.table_name}")
+    DB.get_first_value("SELECT COUNT(*) FROM #{self.table_name}")
   end
 
   def self.create(opts = {})
@@ -65,7 +71,7 @@ class Address
     # We keep track of whether this record has been changed or not
     @changed = false
 
-    # Records created via #initialize are new (unsaved) records
+    # Records are "new" 
     @new_record = @data[Address.primary_key].nil?
   end
 
@@ -86,7 +92,7 @@ class Address
       raise DB::UnknownAttribute.new("Unknown attribute `#{field}` for class #{self.class}")
     end
   end
-
+  
   Address.attributes.each do |attribute|
     # define_methods takes as its input a symbol or string and a block
     # and dynamically defines a method with that name and code
@@ -125,8 +131,8 @@ class Address
     create_or_update
   end
 
-  def ==(other_address)
-    self[Address.primary_key] == other_address[Address.primary_key]
+  def ==(other)
+    other.is_a?(Address) && self[Address.primary_key] == other[Address.primary_key]
   end
 
   private
@@ -143,6 +149,7 @@ class Address
   end
 
   def update
+    # We only need to update if the object has changed
     return unless changed?
 
     self.update_attribute(:updated_at, Time.now.utc) if has_attribute?(:updated_at)
