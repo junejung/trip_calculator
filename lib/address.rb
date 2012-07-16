@@ -16,7 +16,7 @@ class Address
   end
 
   def self.find(id)
-    if row = DB.get_first_row("SELECT * FROM #{Address::table_name} WHERE #{Address::primary_key} = ?", id)
+    if row = DB.get_first_row("SELECT * FROM #{Address.table_name} WHERE #{Address.primary_key} = ?", id)
       self.new(row)
     else
       raise DB::RecordNotFound.new("No #{self.name} record with id '#{id}'")
@@ -24,17 +24,17 @@ class Address
   end
 
   def self.find_by_label(label)
-    DB.get_first_row("SELECT * FROM #{Address::table_name} WHERE label = ?", label)
+    DB.get_first_row("SELECT * FROM #{Address.table_name} WHERE label = ?", label)
   end
 
   def self.all
-    DB.execute("SELECT * FROM #{Address::table_name}").map do |row|
+    DB.execute("SELECT * FROM #{Address.table_name}").map do |row|
       self.new(row)
     end
   end
 
   def self.count
-    DB.get_first_value("SELECT COUNT(*) FROM #{Address::table_name}")
+    DB.get_first_value("SELECT COUNT(*) FROM #{Address.table_name}")
   end
 
   def self.create(opts = {})
@@ -51,7 +51,7 @@ class Address
   # and every other address is used once
 
   def initialize(opts = {})
-    @attributes = Address::attributes
+    @attributes = Address.attributes
 
     # @data is now, e.g., {:id => 5, :content => '249 Oak St #1 San Francisco, CA'}
     # See http://www.ruby-doc.org/core-1.9.3/Hash.html#method-i-update
@@ -66,7 +66,7 @@ class Address
     @changed = false
 
     # Records created via #initialize are new (unsaved) records
-    @new_record = @data[Address::primary_key].nil?
+    @new_record = @data[Address.primary_key].nil?
   end
 
   # This allows us to do things like
@@ -87,7 +87,7 @@ class Address
     end
   end
 
-  Address::attributes.each do |attribute|
+  Address.attributes.each do |attribute|
     # define_methods takes as its input a symbol or string and a block
     # and dynamically defines a method with that name and code
     # e.g., these are equivalent:
@@ -126,7 +126,7 @@ class Address
   end
 
   def ==(other_address)
-    self[Address::primary_key] == other_address[Address::primary_key]
+    self[Address.primary_key] == other_address[Address.primary_key]
   end
 
   private
@@ -139,7 +139,7 @@ class Address
   end
 
   def secondary_attributes
-    @attributes - Array(Address::primary_key)
+    @attributes - Array(Address.primary_key)
   end
 
   def update
@@ -152,8 +152,8 @@ class Address
     
     update_clause = fields.map { |field| "#{field} = ?"}.join(', ')
 
-    sql = "UPDATE #{Address::table_name} SET #{update_clause} WHERE #{Address::primary_key} = ?"
-    DB.execute(sql, *values, self[Address::primary_key]).tap do
+    sql = "UPDATE #{Address.table_name} SET #{update_clause} WHERE #{Address.primary_key} = ?"
+    DB.execute(sql, *values, self[Address.primary_key]).tap do
       @changed = false
     end
   end
@@ -166,14 +166,14 @@ class Address
     fields = secondary_attributes
     values = secondary_attributes.map { |attr| DB.sanitize(self[attr]) }
 
-    sql = "INSERT INTO #{Address::table_name} (#{fields.join(', ')}) VALUES (#{Array.new(values.length, '?').join(', ')})"
+    sql = "INSERT INTO #{Address.table_name} (#{fields.join(', ')}) VALUES (#{Array.new(values.length, '?').join(', ')})"
     DB.execute(sql, *values)
 
-    update_attribute(Address::primary_key, DB.last_insert_row_id)
+    update_attribute(Address.primary_key, DB.last_insert_row_id)
 
     @new_record = false
     @changed    = false
 
-    self[Address::primary_key]
+    self[Address.primary_key]
   end
 end
