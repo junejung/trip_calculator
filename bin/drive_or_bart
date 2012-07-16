@@ -13,13 +13,18 @@ class UI
     @trips = {
       :driving => Trip.new(params.merge(:mode => 'driving')),
       :transit => Trip.new(params.merge(:mode => 'transit')),
+      :walking => Trip.new(params.merge(:mode => 'walking')),
+      :bicycle => Trip.new(params.merge(:mode => 'bicycle')),
     }    
   end
   
   def print_table
-    print_row ['mode', 'duration', 'distance']
+    puts "Origin:      %s" % [@origin.content]
+    puts "Destination: %s" % [@destination.content]
+    puts ""
+    print_row ['Mode', 'Duration', 'Distance']
 
-    @trips.each do |mode, trip|
+    @trips.sort_by { |mode, trip| trip.duration }.each do |mode, trip|
       print_row [mode, format_seconds(trip.duration), format_meters(trip.distance)]
     end
   end
